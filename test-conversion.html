@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Test Conversion</title>
+</head>
+
+<body>
+    <h1>Test File Conversion</h1>
+    <input type="file" id="fileInput" accept=".csv,.txt,.pdf,.docx">
+    <button onclick="testConversion()">Test Conversion</button>
+    <div id="result"></div>
+
+    <script>
+        async function testConversion() {
+            const fileInput = document.getElementById('fileInput');
+            const resultDiv = document.getElementById('result');
+
+            if (!fileInput.files[0]) {
+                resultDiv.innerHTML = 'Please select a file';
+                return;
+            }
+
+            const file = fileInput.files[0];
+            console.log('Selected file:', file.name, file.size);
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('extract_images', 'false');
+            formData.append('extract_tables', 'false');
+            formData.append('output_type', 'markdown');
+
+            try {
+                console.log('Sending request to /api/convert...');
+                resultDiv.innerHTML = 'Converting...';
+
+                const response = await fetch('/api/convert', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                console.log('Response status:', response.status);
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    resultDiv.innerHTML = `Error: ${errorData.error}`;
+                    return;
+                }
+
+                const result = await response.json();
+                console.log('Conversion result:', result);
+
+                resultDiv.innerHTML = `
+                    <h3>Success!</h3>
+                    <p>File: ${result.file_type}</p>
+                    <p>Pages: ${result.total_pages}</p>
+                    <pre>${result.pages[0].content}</pre>
+                `;
+
+            } catch (error) {
+                console.error('Conversion error:', error);
+                resultDiv.innerHTML = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+
+</html>

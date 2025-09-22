@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Debug UI State</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .state {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+
+        .success {
+            background: #d4edda;
+        }
+
+        .loading {
+            background: #fff3cd;
+        }
+
+        .error {
+            background: #f8d7da;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>UI State Simulator</h1>
+
+    <button onclick="simulateLoading()">Simulate Loading</button>
+    <button onclick="simulateSuccess()">Simulate Success</button>
+    <button onclick="simulateError()">Simulate Error</button>
+    <button onclick="simulateReset()">Reset</button>
+
+    <div id="state-info" class="state">
+        <p><strong>State:</strong> <span id="current-state">Initial</span></p>
+        <p><strong>isLoading:</strong> <span id="is-loading">false</span></p>
+        <p><strong>hasResult:</strong> <span id="has-result">false</span></p>
+    </div>
+
+    <div id="ui-display">
+        <div id="loading-ui" style="display: none;" class="state loading">
+            <h3>🔄 Đang xử lý tài liệu...</h3>
+            <p>Loading state is active</p>
+        </div>
+
+        <div id="result-ui" style="display: none;" class="state success">
+            <h3>✅ Kết quả chuyển đổi</h3>
+            <p>File: sample.docx</p>
+            <p>Pages: 2</p>
+            <pre>## Sample Markdown Content
+This is converted content...</pre>
+        </div>
+
+        <div id="empty-ui" style="display: block;" class="state">
+            <h3>📄 Kết quả chuyển đổi sẽ hiển thị ở đây</h3>
+            <p>Waiting for file upload...</p>
+        </div>
+
+        <div id="error-ui" style="display: none;" class="state error">
+            <h3>❌ Lỗi chuyển đổi</h3>
+            <p>Something went wrong...</p>
+        </div>
+    </div>
+
+    <script>
+        let isLoading = false;
+        let hasResult = false;
+        let isError = false;
+
+        function updateUI() {
+            document.getElementById('is-loading').textContent = isLoading;
+            document.getElementById('has-result').textContent = hasResult;
+
+            // Hide all UI states
+            document.getElementById('loading-ui').style.display = 'none';
+            document.getElementById('result-ui').style.display = 'none';
+            document.getElementById('empty-ui').style.display = 'none';
+            document.getElementById('error-ui').style.display = 'none';
+
+            // Show appropriate UI based on state
+            if (isLoading) {
+                document.getElementById('current-state').textContent = 'Loading';
+                document.getElementById('loading-ui').style.display = 'block';
+            } else if (hasResult && !isError) {
+                document.getElementById('current-state').textContent = 'Success';
+                document.getElementById('result-ui').style.display = 'block';
+            } else if (hasResult && isError) {
+                document.getElementById('current-state').textContent = 'Error';
+                document.getElementById('error-ui').style.display = 'block';
+            } else {
+                document.getElementById('current-state').textContent = 'Empty';
+                document.getElementById('empty-ui').style.display = 'block';
+            }
+        }
+
+        function simulateLoading() {
+            isLoading = true;
+            hasResult = false;
+            isError = false;
+            updateUI();
+        }
+
+        function simulateSuccess() {
+            isLoading = false;
+            hasResult = true;
+            isError = false;
+            updateUI();
+        }
+
+        function simulateError() {
+            isLoading = false;
+            hasResult = true;
+            isError = true;
+            updateUI();
+        }
+
+        function simulateReset() {
+            isLoading = false;
+            hasResult = false;
+            isError = false;
+            updateUI();
+        }
+
+        // Initial update
+        updateUI();
+    </script>
+</body>
+
+</html>
