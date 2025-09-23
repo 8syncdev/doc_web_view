@@ -4,12 +4,19 @@ export interface ConversionResult {
     pages: Page[]
     total_pages: number
     file_type: string
+    raw_response?: LLMResponse[]
 }
 
 export interface Page {
     page_number: number
     content: string
     content_length: number
+}
+
+export interface LLMResponse {
+    type: 'thinking' | 'text' | string
+    text?: string
+    thinking?: Array<{ type: string; text: string }>
 }
 
 export interface ConversionOptions {

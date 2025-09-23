@@ -1,11 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { Download, Copy, Check, Eye, Code } from 'lucide-react'
-import ReactMarkdown from 'react-markdown'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import { ConversionResult } from '@/types/api'
+import { useState, useMemo } from 'react'
+import { Download, Copy, Check, Eye, Code, AlertCircle } from 'lucide-react'
+import { MarkdownRenderer } from '@/components/mdx'
+import type { ConversionResult } from '@/types/api'
 
 interface MarkdownViewerProps {
     result: ConversionResult
@@ -17,15 +15,17 @@ export default function MarkdownViewer({ result }: MarkdownViewerProps) {
     const [viewMode, setViewMode] = useState<'preview' | 'source'>('preview')
     const [copied, setCopied] = useState(false)
 
+    const processedPages = useMemo(() => result.pages ?? [], [result.pages])
+
     const handleCopy = async () => {
-        const allContent = result.pages.map(page => page.content).join('\n\n---\n\n')
+        const allContent = processedPages.map(page => page.content).join('\n\n---\n\n')
         await navigator.clipboard.writeText(allContent)
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
     }
 
     const handleDownload = () => {
-        const allContent = result.pages.map(page => page.content).join('\n\n---\n\n')
+        const allContent = processedPages.map(page => page.content).join('\n\n---\n\n')
         const blob = new Blob([allContent], { type: 'text/markdown' })
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
@@ -38,7 +38,7 @@ export default function MarkdownViewer({ result }: MarkdownViewerProps) {
     }
 
     const getTotalContentLength = () => {
-        return result.pages.reduce((total, page) => total + page.content_length, 0)
+        return processedPages.reduce((total, page) => total + page.content_length, 0)
     }
 
     return (
@@ -118,9 +118,9 @@ export default function MarkdownViewer({ result }: MarkdownViewerProps) {
             <div className="border rounded-lg overflow-hidden">
                 {viewMode === 'preview' ? (
                     <div className="p-6 max-h-96 overflow-y-auto">
-                        {result.pages.map((page, index) => (
+                        {processedPages.map((page, index) => (
                             <div key={index} className="mb-8">
-                                {result.total_pages > 1 && (
+                                {processedPages.length > 1 && (
                                     <div className="flex items-center mb-4 pb-2 border-b border-gray-200">
                                         <span className="text-sm font-medium text-gray-500">
                                             Trang {page.page_number}
@@ -131,29 +131,7 @@ export default function MarkdownViewer({ result }: MarkdownViewerProps) {
                                     </div>
                                 )}
                                 <div className="prose prose-sm max-w-none">
-                                    <ReactMarkdown
-                                        components={{
-                                            code({ node, inline, className, children, ...props }) {
-                                                const match = /language-(\w+)/.exec(className || '')
-                                                return !inline && match ? (
-                                                    <SyntaxHighlighter
-                                                        style={tomorrow}
-                                                        language={match[1]}
-                                                        PreTag="div"
-                                                        {...props}
-                                                    >
-                                                        {String(children).replace(/\n$/, '')}
-                                                    </SyntaxHighlighter>
-                                                ) : (
-                                                    <code className={className} {...props}>
-                                                        {children}
-                                                    </code>
-                                                )
-                                            }
-                                        }}
-                                    >
-                                        {page.content}
-                                    </ReactMarkdown>
+                                    <MarkdownRenderer content={page.content} />
                                 </div>
                             </div>
                         ))}
@@ -161,7 +139,7 @@ export default function MarkdownViewer({ result }: MarkdownViewerProps) {
                 ) : (
                     <div className="p-6 max-h-96 overflow-y-auto">
                         <pre className="text-sm text-gray-800 whitespace-pre-wrap">
-                            {result.pages.map(page => page.content).join('\n\n---\n\n')}
+                            {processedPages.map(page => page.content).join('\n\n---\n\n')}
                         </pre>
                     </div>
                 )}

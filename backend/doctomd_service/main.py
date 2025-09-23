@@ -3,6 +3,9 @@ import tempfile
 import aiofiles
 import time
 import asyncio
+import ast
+import json
+import re
 from typing import Optional, List
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
@@ -45,12 +48,77 @@ class ConversionResponse(BaseModel):
     pages: List[dict]
     total_pages: int
     file_type: str
+    raw_response: Optional[List[dict]] = None
 
 
 class ErrorResponse(BaseModel):
     success: bool
     message: str
     error: str
+
+
+def extract_markdown_content(content: Optional[str]) -> str:
+    """Chuẩn hóa nội dung trả về thành Markdown thuần."""
+    if not content or not isinstance(content, str):
+        return ""
+
+    stripped = content.strip()
+    if not stripped:
+        return ""
+
+    parsed_content = None
+
+    if stripped.startswith(("[", "{")):
+        # Một số model trả về JSON theo format của Python (dùng dấu quote đơn)
+        # Sử dụng ast.literal_eval trước, fallback sang json.loads
+        try:
+            parsed_content = ast.literal_eval(stripped)
+        except Exception:
+            try:
+                parsed_content = json.loads(stripped)
+            except Exception:
+                parsed_content = None
+
+    if isinstance(parsed_content, list):
+        for item in parsed_content:
+            if isinstance(item, dict) and item.get("type") == "text" and item.get("text"):
+                stripped = item["text"]
+                break
+    elif isinstance(parsed_content, dict):
+        if parsed_content.get("type") == "text" and parsed_content.get("text"):
+            stripped = parsed_content["text"]
+        elif parsed_content.get("text"):
+            stripped = parsed_content["text"]
+
+    return clean_markdown_wrappers(stripped)
+
+
+def clean_markdown_wrappers(text: str) -> str:
+    """Loại bỏ các backtick code fence được bọc quanh markdown."""
+    if not text:
+        return ""
+
+    cleaned = text.strip()
+
+    fence_pattern = re.compile(r"^```(?:markdown)?\s*([\s\S]*?)\s*```$")
+    match = fence_pattern.match(cleaned)
+    if match:
+        cleaned = match.group(1).strip()
+
+    return cleaned
+
+
+def build_pages_data(pages) -> List[dict]:
+    formatted_pages: List[dict] = []
+    for page in pages:
+        raw_content = getattr(page, "page_content", "")
+        clean_content = extract_markdown_content(raw_content)
+        formatted_pages.append({
+            "page_number": getattr(page, "page_number", len(formatted_pages) + 1),
+            "content": clean_content,
+            "content_length": len(clean_content),
+        })
+    return formatted_pages
 
 # Initialize LLM client
 
@@ -205,13 +273,7 @@ async def convert_document(
             print(f"✅ Conversion completed successfully!")
 
             # Chuẩn bị response
-            pages_data = []
-            for page in result.pages:
-                pages_data.append({
-                    "page_number": page.page_number,
-                    "content": page.page_content,
-                    "content_length": len(page.page_content)
-                })
+            pages_data = build_pages_data(result.pages)
 
             return ConversionResponse(
                 success=True,
@@ -286,12 +348,19 @@ async def convert_url(
                 "content_length": len(page.page_content)
             })
 
+        raw_response = None
+        if hasattr(result, 'raw_response'):
+            raw_response = result.raw_response
+        elif hasattr(result, 'metadata') and 'raw_response' in result.metadata:
+            raw_response = result.metadata['raw_response']
+
         return ConversionResponse(
             success=True,
             message=f"Chuyển đổi URL thành công: {url}",
             pages=pages_data,
             total_pages=len(pages_data),
-            file_type="url"
+            file_type="url",
+            raw_response=raw_response
         )
 
     except HTTPException:
@@ -390,20 +459,15 @@ async def convert_document_fast(
             print(f"⚡ FAST MODE: Conversion completed!")
 
             # Chuẩn bị response
-            pages_data = []
-            for page in result.pages:
-                pages_data.append({
-                    "page_number": page.page_number,
-                    "content": page.page_content,
-                    "content_length": len(page.page_content)
-                })
+            pages_data = build_pages_data(result.pages)
 
             return ConversionResponse(
                 success=True,
                 message=f"Chuyển đổi nhanh thành công {file.filename}",
                 pages=pages_data,
                 total_pages=len(pages_data),
-                file_type=file_extension
+                file_type=file_extension,
+                raw_response=None
             )
 
         finally:
