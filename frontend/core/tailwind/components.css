@@ -1,0 +1,88 @@
+.markdown-container {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: clamp(18px, 1.125rem + 0.2vw, 20px);
+    line-height: 1.8;
+    color: rgb(30 41 59);
+}
+
+.markdown-container strong,
+.markdown-container h1,
+.markdown-container h2,
+.markdown-container h3,
+.markdown-container h4 {
+    color: rgb(15 23 42);
+}
+
+.markdown-container a {
+    color: rgb(37 99 235);
+    text-decoration: none;
+}
+
+.markdown-container a:hover {
+    text-decoration: underline;
+}
+
+.markdown-container pre {
+    background-color: rgb(15 23 42);
+    color: rgb(226 232 240);
+    padding: 1.5rem;
+    border-radius: 1rem;
+    overflow-x: auto;
+}
+
+.markdown-container code {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 0.95em;
+}
+
+.markdown-container ul,
+.markdown-container ol {
+    padding-left: 1.5rem;
+    margin-block: 1.25rem;
+}
+
+.markdown-container ul li::marker {
+    color: rgb(59 130 246);
+}
+
+.markdown-container blockquote {
+    border-left: 4px solid rgb(96 165 250);
+    background: rgb(239 246 255);
+    color: rgb(37 99 235);
+    padding: 1.25rem 1.5rem;
+    border-radius: 1rem;
+    font-style: italic;
+}
+
+.markdown-container table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 2rem 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px -20px rgba(15, 23, 42, 0.4);
+}
+
+.markdown-container table th {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(79, 70, 229, 0.15));
+    color: rgb(30 41 59);
+    font-weight: 600;
+    padding: 1rem 1.25rem;
+    text-align: left;
+}
+
+.markdown-container table td {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.markdown-container table tr:last-child td {
+    border-bottom: none;
+}
+
+.markdown-container hr {
+    border: none;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.1), rgba(79, 70, 229, 0.1));
+    margin: 3rem 0;
+}

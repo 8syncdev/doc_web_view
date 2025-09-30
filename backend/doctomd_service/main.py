@@ -48,6 +48,7 @@ class ConversionResponse(BaseModel):
     pages: List[dict]
     total_pages: int
     file_type: str
+    assets: Optional[dict] = None
     raw_response: Optional[List[dict]] = None
 
 
@@ -57,16 +58,17 @@ class ErrorResponse(BaseModel):
     error: str
 
 
-def extract_markdown_content(content: Optional[str]) -> str:
+def extract_markdown_content(content: Optional[str]) -> tuple[str, List[dict]]:
     """Chuẩn hóa nội dung trả về thành Markdown thuần."""
     if not content or not isinstance(content, str):
-        return ""
+        return "", []
 
     stripped = content.strip()
     if not stripped:
-        return ""
+        return "", []
 
     parsed_content = None
+    images: List[dict] = []
 
     if stripped.startswith(("[", "{")):
         # Một số model trả về JSON theo format của Python (dùng dấu quote đơn)
@@ -80,17 +82,35 @@ def extract_markdown_content(content: Optional[str]) -> str:
                 parsed_content = None
 
     if isinstance(parsed_content, list):
+        text_blocks: List[str] = []
         for item in parsed_content:
-            if isinstance(item, dict) and item.get("type") == "text" and item.get("text"):
-                stripped = item["text"]
-                break
+            if not isinstance(item, dict):
+                continue
+
+            item_type = item.get("type")
+            if item_type == "text" and item.get("text"):
+                text_blocks.append(item["text"])
+            elif item_type == "image" and item.get("image_url"):
+                images.append({
+                    "alt": item.get("alt", ""),
+                    "url": item["image_url"],
+                    "title": item.get("title", ""),
+                })
+
+        if text_blocks:
+            stripped = "\n\n".join(text_blocks)
     elif isinstance(parsed_content, dict):
         if parsed_content.get("type") == "text" and parsed_content.get("text"):
             stripped = parsed_content["text"]
         elif parsed_content.get("text"):
             stripped = parsed_content["text"]
 
-    return clean_markdown_wrappers(stripped)
+    cleaned = clean_markdown_wrappers(stripped)
+    images_from_markdown = extract_images_from_content(cleaned)
+    for image in images_from_markdown:
+        if image not in images:
+            images.append(image)
+    return cleaned, images
 
 
 def clean_markdown_wrappers(text: str) -> str:
@@ -108,17 +128,44 @@ def clean_markdown_wrappers(text: str) -> str:
     return cleaned
 
 
-def build_pages_data(pages) -> List[dict]:
+def build_pages_data(pages) -> tuple[List[dict], List[dict]]:
     formatted_pages: List[dict] = []
+    images: List[dict] = []
+
     for page in pages:
+        page_number = getattr(page, "page_number", len(formatted_pages) + 1)
         raw_content = getattr(page, "page_content", "")
-        clean_content = extract_markdown_content(raw_content)
+        clean_content, page_images = extract_markdown_content(raw_content)
+
+        for image in page_images:
+            images.append({
+                **image,
+                "page": page_number
+            })
+
         formatted_pages.append({
-            "page_number": getattr(page, "page_number", len(formatted_pages) + 1),
+            "page_number": page_number,
             "content": clean_content,
             "content_length": len(clean_content),
         })
-    return formatted_pages
+
+    return formatted_pages, images
+
+
+def extract_images_from_content(markdown: str) -> List[dict]:
+
+
+def extract_images_from_content(markdown: str) -> List[dict]:
+    pattern = re.compile(r"!\[(.*?)\]\(([^\s\)]+)(?:\s+\"(.*?)\")?\)")
+    images = []
+    for match in pattern.finditer(markdown):
+        alt_text, url, title = match.groups()
+        images.append({
+            "alt": alt_text or "",
+            "url": url,
+            "title": title or ""
+        })
+    return images
 
 # Initialize LLM client
 
@@ -273,14 +320,15 @@ async def convert_document(
             print(f"✅ Conversion completed successfully!")
 
             # Chuẩn bị response
-            pages_data = build_pages_data(result.pages)
+            pages_data, images = build_pages_data(result.pages)
 
             return ConversionResponse(
                 success=True,
                 message=f"Chuyển đổi thành công {file.filename}",
                 pages=pages_data,
                 total_pages=len(pages_data),
-                file_type=file_extension
+                file_type=file_extension,
+                assets={"images": images} if images else None
             )
 
         finally:

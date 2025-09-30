@@ -42,21 +42,21 @@ export default function MarkdownViewer({ result }: MarkdownViewerProps) {
     }
 
     return (
-        <div className="card">
+        <div className="w-full mx-auto bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-lg shadow-slate-200/60 dark:shadow-none p-6 sm:p-8 space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                        {result.success ? 'Kết quả chuyển đổi' : 'Lỗi chuyển đổi'}
+                    <h3 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                        {result.success ? 'Kết quả chuyển đổi' : 'Chuyển đổi thất bại'}
                     </h3>
-                    <p className="text-sm text-gray-500">
+                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-2xl leading-6">
                         {result.message}
                     </p>
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex flex-wrap gap-2">
                     <button
                         onClick={() => setViewMode(viewMode === 'preview' ? 'source' : 'preview')}
-                        className="btn-secondary"
+                        className={`inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-slate-700 px-4 py-2 text-sm font-medium transition-all hover:bg-slate-100 dark:hover:bg-slate-800 ${viewMode === 'preview' ? 'bg-slate-900 text-white dark:bg-white/10 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}
                     >
                         {viewMode === 'preview' ? (
                             <>
@@ -72,7 +72,7 @@ export default function MarkdownViewer({ result }: MarkdownViewerProps) {
                     </button>
                     <button
                         onClick={handleCopy}
-                        className="btn-secondary"
+                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 transition-all hover:bg-slate-100 dark:hover:bg-slate-800"
                     >
                         {copied ? (
                             <>
@@ -88,7 +88,7 @@ export default function MarkdownViewer({ result }: MarkdownViewerProps) {
                     </button>
                     <button
                         onClick={handleDownload}
-                        className="btn-primary"
+                        className="inline-flex items-center gap-2 rounded-full bg-slate-900 text-white px-4 py-2 text-sm font-medium transition-all hover:bg-slate-700 dark:bg-blue-600 dark:hover:bg-blue-500"
                     >
                         <Download className="w-4 h-4 mr-1" />
                         Download
@@ -97,48 +97,49 @@ export default function MarkdownViewer({ result }: MarkdownViewerProps) {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
-                <div className="text-center">
-                    <div className="text-2xl font-bold text-primary-600">{result.total_pages}</div>
-                    <div className="text-sm text-gray-500">Trang</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div className="stat-card">
+                    <div className="stat-value">{result.total_pages}</div>
+                    <div className="stat-label">Số trang</div>
                 </div>
-                <div className="text-center">
-                    <div className="text-2xl font-bold text-primary-600">
-                        {getTotalContentLength().toLocaleString()}
-                    </div>
-                    <div className="text-sm text-gray-500">Ký tự</div>
+                <div className="stat-card">
+                    <div className="stat-value">{getTotalContentLength().toLocaleString()}</div>
+                    <div className="stat-label">Tổng ký tự</div>
                 </div>
-                <div className="text-center">
-                    <div className="text-2xl font-bold text-primary-600">{result.file_type}</div>
-                    <div className="text-sm text-gray-500">Định dạng</div>
+                <div className="stat-card">
+                    <div className="stat-value uppercase">{result.file_type}</div>
+                    <div className="stat-label">Định dạng</div>
                 </div>
             </div>
 
             {/* Content */}
-            <div className="border rounded-lg overflow-hidden">
+            <div className="border rounded-xl overflow-hidden bg-white shadow-sm">
                 {viewMode === 'preview' ? (
-                    <div className="p-6 max-h-96 overflow-y-auto">
+                    <div className="p-6 max-h-[600px] overflow-y-auto">
                         {processedPages.map((page, index) => (
-                            <div key={index} className="mb-8">
+                            <article key={index} className="mb-10 last:mb-0">
                                 {processedPages.length > 1 && (
-                                    <div className="flex items-center mb-4 pb-2 border-b border-gray-200">
-                                        <span className="text-sm font-medium text-gray-500">
+                                    <header className="flex items-center gap-3 mb-6 pb-3 border-b border-slate-200">
+                                        <span className="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase">
                                             Trang {page.page_number}
                                         </span>
-                                        <span className="ml-auto text-sm text-gray-400">
-                                            {page.content_length} ký tự
+                                        <span className="ml-auto text-xs text-slate-400">
+                                            {page.content_length.toLocaleString()} ký tự
                                         </span>
-                                    </div>
+                                    </header>
                                 )}
-                                <div className="prose prose-sm max-w-none">
-                                    <MarkdownRenderer content={page.content} />
+                                <div className="markdown-container prose prose-base sm:prose-lg lg:prose-xl max-w-none prose-headings:text-slate-900 prose-p:text-slate-700 prose-li:my-1 prose-hr:my-10">
+                                    <MarkdownRenderer
+                                        content={page.content}
+                                        className="bg-transparent border-none shadow-none px-0"
+                                    />
                                 </div>
-                            </div>
+                            </article>
                         ))}
                     </div>
                 ) : (
-                    <div className="p-6 max-h-96 overflow-y-auto">
-                        <pre className="text-sm text-gray-800 whitespace-pre-wrap">
+                    <div className="p-6 max-h-[600px] overflow-y-auto bg-slate-900">
+                        <pre className="text-sm sm:text-base text-slate-200 whitespace-pre-wrap leading-7">
                             {processedPages.map(page => page.content).join('\n\n---\n\n')}
                         </pre>
                     </div>
@@ -147,12 +148,12 @@ export default function MarkdownViewer({ result }: MarkdownViewerProps) {
 
             {/* Error State */}
             {!result.success && (
-                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="flex items-center">
-                        <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
-                        <span className="text-red-700 font-medium">Lỗi chuyển đổi</span>
+                <div className="rounded-xl border border-red-200 bg-red-50/80 px-4 py-3 text-sm text-red-700 flex items-start gap-3">
+                    <AlertCircle className="mt-0.5 h-4 w-4" />
+                    <div>
+                        <p className="font-medium">Lỗi chuyển đổi</p>
+                        <p className="mt-1 text-red-600/80">{result.message}</p>
                     </div>
-                    <p className="text-red-600 mt-1">{result.message}</p>
                 </div>
             )}
         </div>

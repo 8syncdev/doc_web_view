@@ -15,7 +15,7 @@ export const UnorderedList = memo(({ children }: { children: React.ReactNode }) 
 export const OrderedList = memo(({ children }: { children: React.ReactNode }) => (
     <ol className={cn(
         "space-y-2",
-        "my-4", 
+        "my-4",
         "max-w-[65ch]",
         "list-decimal",
         "list-inside"

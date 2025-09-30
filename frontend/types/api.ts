@@ -11,6 +11,13 @@ export interface Page {
     page_number: number
     content: string
     content_length: number
+    images?: ImageAsset[]
+}
+
+export interface ImageAsset {
+    alt: string
+    url: string
+    title?: string
 }
 
 export interface LLMResponse {

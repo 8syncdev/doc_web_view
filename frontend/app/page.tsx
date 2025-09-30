@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Upload, Link, FileText, Download, Loader2 } from 'lucide-react'
+import { Upload, Link, FileText, Download, Loader2, ImageIcon } from 'lucide-react'
 import FileUpload from '@/components/FileUpload'
 import UrlConverter from '@/components/UrlConverter'
 import MarkdownViewer from '@/components/MarkdownViewer'
@@ -99,7 +99,38 @@ export default function Home() {
                             <p className="text-gray-600">Đang xử lý tài liệu...</p>
                         </div>
                     ) : conversionResult ? (
-                        <MarkdownViewer result={conversionResult} />
+                        <>
+                            <MarkdownViewer result={conversionResult} />
+                            {conversionResult.assets?.images && conversionResult.assets.images.length > 0 && (
+                                <div className="card">
+                                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                        <ImageIcon className="w-5 h-5 text-primary-600" />
+                                        Ảnh được trích xuất
+                                    </h3>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {conversionResult.assets.images.map((image, index) => (
+                                            <div key={`${image.url}-${index}`} className="border rounded-lg p-3 space-y-2">
+                                                <div className="text-xs text-gray-500">Trang {image.page}</div>
+                                                <a
+                                                    href={image.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-sm font-medium text-primary-600 hover:underline break-all"
+                                                >
+                                                    {image.url}
+                                                </a>
+                                                {image.title && (
+                                                    <div className="text-sm text-gray-600">{image.title}</div>
+                                                )}
+                                                {image.alt && (
+                                                    <div className="text-xs text-gray-500">Alt: {image.alt}</div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <div className="card text-center text-gray-500">
                             <FileText className="w-16 h-16 mx-auto mb-4 opacity-50" />
